@@ -1,0 +1,1267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>XDC LST — LP Yield Simulator · Protofire</title>
+<style>
+  :root {
+    --navy: #0F2A44;
+    --navy-deep: #081A2B;
+    --orange: #E8732C;
+    --orange-dark: #B85A1E;
+    --slate: #3A4A5C;
+    --muted: #6B7280;
+    --light: #F4F6F9;
+    --accent: #FDEFE2;
+    --line: #D9DEE6;
+    --white: #FFFFFF;
+    --good: #2E7D5B;
+    --bad: #B23B3B;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    background: var(--light);
+    color: var(--slate);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 28px 28px 64px; }
+  header {
+    display: flex; justify-content: space-between; align-items: end;
+    border-bottom: 2px solid var(--orange);
+    padding-bottom: 14px; margin-bottom: 22px;
+  }
+  .brand {
+    font-size: 11px; font-weight: 700; letter-spacing: 3px;
+    color: var(--orange-dark);
+  }
+  .deck-meta { font-size: 11px; color: var(--muted); letter-spacing: 1.5px; }
+  h1 { font-size: 28px; color: var(--navy); margin: 18px 0 4px; font-weight: 700; }
+  .subtitle { color: var(--muted); font-size: 14px; margin: 0 0 22px; font-style: italic; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 22px;
+  }
+  .panel-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 3px; color: var(--orange-dark);
+    margin: 0 0 14px;
+  }
+
+  /* Sliders */
+  .control { margin-bottom: 18px; }
+  .control-label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .control-label .name {
+    font-size: 12px; color: var(--muted); font-weight: 600;
+  }
+  .control-label .value {
+    font-size: 16px; color: var(--navy); font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 4px; border-radius: 2px;
+    background: var(--line); outline: none; margin: 4px 0;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--orange); cursor: pointer;
+    border: 2px solid var(--white);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--orange); cursor: pointer;
+    border: 2px solid var(--white);
+  }
+  .help {
+    font-size: 11px; color: var(--muted); font-style: italic; margin-top: 4px;
+  }
+
+  /* Tier toggle */
+  .tier-toggle {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+    margin-top: 8px;
+  }
+  .tier-btn, .ticket-btn {
+    background: var(--light); border: 1px solid var(--line); color: var(--navy);
+    padding: 8px; cursor: pointer; font-weight: 700; font-size: 13px;
+    border-radius: 4px; transition: all .15s;
+    font-family: inherit;
+  }
+  .tier-btn:hover, .ticket-btn:hover { border-color: var(--orange); }
+  .tier-btn.active, .ticket-btn.active {
+    background: var(--accent); border-color: var(--orange); color: var(--orange-dark);
+  }
+
+  /* APY hero */
+  .hero {
+    background: var(--navy); color: var(--white);
+    padding: 26px 26px; border-radius: 6px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 22px;
+  }
+  .hero-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 3px; color: var(--orange);
+    margin-bottom: 4px;
+  }
+  .hero-value {
+    font-size: 56px; font-weight: 700; letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .hero-sub {
+    font-size: 12px; color: #B6C2D2; margin-top: 8px;
+  }
+  .hero-right { text-align: right; }
+  .hero-right .label { font-size: 10px; color: #8DA0BC; letter-spacing: 2px; font-weight: 700; margin-bottom: 4px; }
+  .hero-right .val { font-size: 22px; color: var(--white); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* Breakdown */
+  .breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 0; }
+  @media (max-width: 700px) { .breakdown { grid-template-columns: 1fr; } }
+
+  .stack {
+    display: flex; flex-direction: column; gap: 8px; margin-top: 12px;
+  }
+  .stack-item {
+    display: grid;
+    grid-template-columns: 1.4fr 6fr 1.5fr 0.9fr;
+    gap: 10px; align-items: center;
+    font-size: 12px;
+  }
+  .stack-name { color: var(--navy); font-weight: 600; }
+  .stack-bar-bg {
+    height: 18px; background: var(--light); border-radius: 2px; overflow: hidden;
+  }
+  .stack-bar {
+    height: 100%; background: var(--orange);
+    transition: width .25s;
+  }
+  .stack-bar.neg { background: var(--bad); }
+  .stack-val {
+    text-align: right; color: var(--navy); font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .stack-val.neg { color: var(--bad); }
+  .stack-pct {
+    text-align: right; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+
+  /* Mini stats */
+  .mini-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin-top: 14px;
+  }
+  .mini-stat {
+    background: var(--light); padding: 12px; border-radius: 4px; text-align: center;
+  }
+  .mini-stat .label { font-size: 9px; color: var(--muted); letter-spacing: 2px; font-weight: 700; margin-bottom: 4px; }
+  .mini-stat .value { font-size: 16px; color: var(--navy); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .narrative {
+    margin-top: 16px; padding: 14px 16px;
+    background: var(--accent); border-left: 3px solid var(--orange);
+    font-size: 12px; color: var(--slate); line-height: 1.6;
+  }
+  .narrative b { color: var(--navy); }
+
+  /* Scenario quick-selector */
+  .scenario-row {
+    display: flex; flex-direction: column; gap: 8px;
+    margin-bottom: 18px;
+    padding: 10px 12px;
+    background: var(--light); border-radius: 4px;
+    border: 1px solid var(--line);
+  }
+  .scenario-row .scn-label {
+    font-size: 9px; color: var(--muted); letter-spacing: 1.5px;
+    font-weight: 700; text-transform: uppercase;
+  }
+  .scenario-row .scn-btns {
+    display: flex; gap: 6px;
+  }
+  .scn-btn {
+    flex: 1;
+    background: var(--white); border: 1px solid var(--line);
+    color: var(--navy); padding: 6px 10px;
+    cursor: pointer; font-weight: 700; font-size: 12px;
+    border-radius: 3px; transition: all .15s;
+    font-family: inherit;
+  }
+  .scn-btn:hover { border-color: var(--orange); }
+  .scn-btn.active {
+    background: var(--accent); border-color: var(--orange); color: var(--orange-dark);
+  }
+
+  /* Network context reference */
+  .net-ctx {
+    background: var(--navy); color: var(--white);
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin-bottom: 18px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .net-ctx .label {
+    font-size: 9px; color: var(--orange); letter-spacing: 2px;
+    font-weight: 700; margin-bottom: 4px;
+  }
+  .net-ctx .row {
+    display: flex; justify-content: space-between;
+    color: #B6C2D2;
+  }
+  .net-ctx .row b { color: var(--white); font-variant-numeric: tabular-nums; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; border-bottom: 1px solid var(--line);
+    margin-bottom: 22px; gap: 4px;
+  }
+  .tab {
+    padding: 12px 20px; cursor: pointer;
+    font-size: 12px; font-weight: 700; color: var(--muted);
+    letter-spacing: 1.5px; text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all .15s;
+    user-select: none;
+  }
+  .tab:hover { color: var(--navy); }
+  .tab.active { color: var(--navy); border-bottom-color: var(--orange); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Year table (3-year view) */
+  .year-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 12px; margin-top: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .year-table th, .year-table td {
+    padding: 9px 10px; text-align: right;
+    border-bottom: 1px solid var(--line);
+  }
+  .year-table th:first-child, .year-table td:first-child {
+    text-align: left;
+  }
+  .year-table thead th {
+    background: var(--navy); color: var(--white); font-weight: 700;
+    font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+    border-bottom: none;
+  }
+  .year-table thead th:first-child { border-radius: 4px 0 0 0; }
+  .year-table thead th:last-child { border-radius: 0 4px 0 0; }
+  .year-table tbody td { color: var(--slate); }
+  .year-table tbody td:first-child { color: var(--navy); font-weight: 600; }
+  .year-table tbody td:last-child { color: var(--navy); font-weight: 700; }
+  .year-table .yr-label {
+    font-size: 9px; color: var(--muted); font-weight: 500;
+    text-transform: uppercase; letter-spacing: 1px;
+    display: block; margin-top: 2px;
+  }
+  .year-table tr.totals td {
+    background: var(--accent); color: var(--navy); font-weight: 700;
+    border-top: 2px solid var(--orange); border-bottom: none;
+    font-size: 13px;
+  }
+  .year-table tr.totals td:first-child { border-radius: 0 0 0 4px; }
+  .year-table tr.totals td:last-child {
+    border-radius: 0 0 4px 0; color: var(--orange-dark); font-size: 14px;
+  }
+
+  /* Exit scenarios */
+  .exit-section { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .exit-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+    margin-top: 12px;
+  }
+  .exit-card {
+    background: var(--light); border: 1px solid var(--line); border-radius: 6px;
+    padding: 14px 12px; cursor: pointer; transition: all .15s;
+    position: relative;
+  }
+  .exit-card:hover { border-color: var(--orange); }
+  .exit-card.active {
+    background: var(--accent); border-color: var(--orange);
+  }
+  .exit-card .label {
+    font-size: 9px; color: var(--muted); letter-spacing: 2px; font-weight: 700;
+    text-transform: uppercase;
+  }
+  .exit-card .timing {
+    font-size: 16px; color: var(--navy); font-weight: 700; margin-top: 2px;
+  }
+  .exit-card .irr {
+    font-size: 28px; color: var(--navy); font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    margin-top: 10px; line-height: 1;
+  }
+  .exit-card.active .irr { color: var(--orange-dark); }
+  .exit-card .irr-label {
+    font-size: 9px; color: var(--muted); letter-spacing: 2px; font-weight: 700;
+    margin-top: 4px;
+  }
+  .exit-card .total-return {
+    font-size: 12px; color: var(--slate); margin-top: 10px;
+    padding-top: 8px; border-top: 1px dashed var(--line);
+  }
+  .exit-card .total-return b { color: var(--navy); }
+
+  /* Cash-flow table */
+  .cf-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 12px; margin-top: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .cf-table th, .cf-table td {
+    padding: 7px 10px; text-align: right;
+    border-bottom: 1px solid var(--line);
+  }
+  .cf-table th:first-child, .cf-table td:first-child { text-align: left; }
+  .cf-table thead th {
+    font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); font-weight: 700; border-bottom: 1px solid var(--line);
+  }
+  .cf-table tbody td { color: var(--slate); }
+  .cf-table tbody td:first-child { color: var(--navy); font-weight: 600; }
+  .cf-table .cf-pos { color: var(--good, #2E7D5B); }
+  .cf-table .cf-neg { color: var(--bad); }
+  .cf-table tr.cf-net td {
+    background: var(--accent); color: var(--navy); font-weight: 700;
+    border-top: 1px solid var(--orange);
+  }
+  .cf-table tr.cf-net td:last-child { color: var(--orange-dark); }
+
+  /* Math collapsible */
+  details {
+    margin-top: 22px; background: var(--white);
+    border: 1px solid var(--line); border-radius: 6px;
+  }
+  summary {
+    padding: 16px 22px; cursor: pointer; font-weight: 700; color: var(--navy);
+    list-style: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: "+ "; color: var(--orange); margin-right: 6px; font-size: 18px;
+  }
+  details[open] summary::before { content: "− "; }
+  .math-content { padding: 0 22px 22px; font-size: 13px; }
+  .math-content h3 { color: var(--navy); margin-top: 18px; font-size: 14px; }
+  .formula {
+    background: var(--light); padding: 12px 14px; border-radius: 4px;
+    font-family: "SF Mono", Consolas, "Courier New", monospace; font-size: 12px;
+    margin: 10px 0; color: var(--navy); overflow-x: auto;
+  }
+  .math-content table {
+    width: 100%; border-collapse: collapse; font-size: 12px; margin: 12px 0;
+  }
+  .math-content th, .math-content td {
+    border: 1px solid var(--line); padding: 8px; text-align: left;
+  }
+  .math-content th { background: var(--navy); color: var(--white); font-weight: 700; font-size: 11px; }
+  .math-content tr:nth-child(even) td { background: var(--light); }
+
+  footer {
+    margin-top: 40px; font-size: 11px; color: var(--muted);
+    text-align: center; padding-top: 14px; border-top: 1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <div class="brand">PROTOFIRE  ·  XDC LIQUID STAKING</div>
+    <h1 style="margin-top:6px">LP Yield Simulator</h1>
+    <p class="subtitle">Move the sliders to model your APY at different commitment, price, and protocol-TVL scenarios.</p>
+  </div>
+  <div class="deck-meta">CONFIDENTIAL · For prospective LPs</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="y1">Year 1 view</div>
+  <div class="tab" data-tab="y3">3-Year cumulative</div>
+</div>
+
+<!-- ========== TAB 1: YEAR 1 VIEW ========== -->
+<div class="tab-content active" id="tab-y1">
+
+<!-- HERO -->
+<div class="hero">
+  <div>
+    <div class="hero-label">YOUR PROJECTED ANNUAL APY</div>
+    <div class="hero-value" id="apy">—</div>
+    <div class="hero-sub" id="apySub">Cash-on-cash, single-price assumption.</div>
+  </div>
+  <div class="hero-right">
+    <div class="label">ANNUAL REVENUE</div>
+    <div class="val" id="totalRev">—</div>
+    <div class="label" style="margin-top:14px">RETURN OVER LOCK</div>
+    <div class="val" id="totalLock">—</div>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- LEFT: CONTROLS -->
+  <div class="panel">
+    <div class="panel-title">SCENARIO INPUTS</div>
+
+    <div class="net-ctx">
+      <div class="label">XDC NETWORK CONTEXT (May 2026)</div>
+      <div class="row"><span>Circulating supply</span><b>19.1B XDC</b></div>
+      <div class="row"><span>Currently staked</span><b>~2.6B (13.6%)</b></div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">LP commitment</span>
+        <span class="value" id="vTicket">$250,000 · Standard · 20%</span>
+      </div>
+      <div class="tier-toggle">
+        <button class="ticket-btn active" data-ticket="250000" data-rate="0.20" data-label="Standard">$250k</button>
+        <button class="ticket-btn" data-ticket="500000" data-rate="0.30" data-label="Strategic">$500k</button>
+        <button class="ticket-btn" data-ticket="1000000" data-rate="0.40" data-label="Anchor">$1.0M</button>
+      </div>
+      <div class="help">Tier rate is auto-applied: Standard 20% · Strategic 30% · Anchor 40%.</div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">XDC price (USD)</span>
+        <span class="value" id="vPrice">$0.0325</span>
+      </div>
+      <input type="range" id="price" min="0.005" max="0.10" step="0.0005" value="0.0325" />
+      <div class="help">Entry $0.0325 fixed. Moving the slider models the prevailing/exit price — affects revenue and principal recovery.</div>
+    </div>
+
+    <div class="scenario-row">
+      <span class="scn-label">QUICK SCENARIO</span>
+      <div class="scn-btns">
+        <button class="scn-btn scn-y1" data-pct="0.10">10%</button>
+        <button class="scn-btn scn-y1" data-pct="0.20">20%</button>
+        <button class="scn-btn scn-y1" data-pct="0.30">30%</button>
+      </div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">LST TVL (market share)</span>
+        <span class="value" id="vTvl">500M XDC · 2.6% of supply</span>
+      </div>
+      <input type="range" id="tvl" min="50000000" max="7650000000" step="50000000" value="500000000" />
+      <div class="help"><span id="vNodes">50</span> active validator nodes · cap at ~7.65B XDC (40% of supply).</div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">Total cohort raise</span>
+        <span class="value" id="vRaise">$2.0M</span>
+      </div>
+      <input type="range" id="raise" min="2000000" max="5000000" step="100000" value="2000000" />
+      <div class="help">Sum of all LP tickets in this cohort. Determines your pro-rata.</div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">Lock period</span>
+        <span class="value" id="vLock">24 mo</span>
+      </div>
+      <input type="range" id="lock" min="12" max="48" step="6" value="24" />
+    </div>
+
+  </div>
+
+  <!-- RIGHT: BREAKDOWN -->
+  <div class="panel">
+    <div class="panel-title">REVENUE BREAKDOWN</div>
+
+    <div class="stack" id="stack"></div>
+
+    <div class="mini-stats">
+      <div class="mini-stat">
+        <div class="label">YOUR XDC STAKE</div>
+        <div class="value" id="mStake">—</div>
+      </div>
+      <div class="mini-stat">
+        <div class="label">PRO-RATA × TIER RATE</div>
+        <div class="value" id="mShare">—</div>
+      </div>
+      <div class="mini-stat">
+        <div class="label">PROTOCOL P&amp;L (ANNUAL)</div>
+        <div class="value" id="mProto">—</div>
+      </div>
+    </div>
+
+    <div class="narrative" id="narrative">
+      Move the sliders to see results.
+    </div>
+  </div>
+</div>
+
+</div><!-- /tab-y1 -->
+
+<!-- ========== TAB 2: 3-YEAR CUMULATIVE ========== -->
+<div class="tab-content" id="tab-y3">
+
+<div class="hero">
+  <div>
+    <div class="hero-label">3-YEAR ANNUALIZED APY</div>
+    <div class="hero-value" id="apy3y">—</div>
+    <div class="hero-sub">Average annual return over the 3-year lock. R₃ compounds for 3 years; R₄ (OBC) only year 1.</div>
+  </div>
+  <div class="hero-right">
+    <div class="label">3-YEAR TOTAL RETURN</div>
+    <div class="val" id="totalRev3y">—</div>
+    <div class="label" style="margin-top:14px">CUMULATIVE % ON TICKET</div>
+    <div class="val" id="cumPct3y">—</div>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- LEFT: CONTROLS -->
+  <div class="panel">
+    <div class="panel-title">SCENARIO INPUTS</div>
+
+    <div class="net-ctx">
+      <div class="label">XDC NETWORK CONTEXT (May 2026)</div>
+      <div class="row"><span>Circulating supply</span><b>19.1B XDC</b></div>
+      <div class="row"><span>Currently staked</span><b>~2.6B (13.6%)</b></div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">LP commitment</span>
+        <span class="value" id="vTicket3y">$250,000 · Standard · 20%</span>
+      </div>
+      <div class="tier-toggle">
+        <button class="ticket-btn active" data-ticket="250000" data-rate="0.20" data-label="Standard">$250k</button>
+        <button class="ticket-btn" data-ticket="500000" data-rate="0.30" data-label="Strategic">$500k</button>
+        <button class="ticket-btn" data-ticket="1000000" data-rate="0.40" data-label="Anchor">$1.0M</button>
+      </div>
+      <div class="help">Synced with Year-1 tab. Tier rate auto-applied.</div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">XDC price (USD)</span>
+        <span class="value" id="vPrice3y">$0.0325</span>
+      </div>
+      <input type="range" id="price3y" min="0.005" max="0.10" step="0.0005" value="0.0325" />
+      <div class="help">Entry $0.0325 fixed; this slider is the prevailing/exit price.</div>
+    </div>
+
+    <div class="scenario-row">
+      <span class="scn-label">RAMP SCENARIO (Y3 TARGET)</span>
+      <div class="scn-btns">
+        <button class="scn-btn scn-3y" data-pct="0.10">10%</button>
+        <button class="scn-btn scn-3y" data-pct="0.20">20%</button>
+        <button class="scn-btn scn-3y" data-pct="0.30">30%</button>
+      </div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">Year 1 TVL · early ramp</span>
+        <span class="value" id="vTvlY1">500M XDC · 2.6%</span>
+      </div>
+      <input type="range" id="tvlY1" min="50000000" max="7650000000" step="50000000" value="500000000" />
+      <div class="help">OBC active this year.</div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">Year 2 TVL · growth</span>
+        <span class="value" id="vTvlY2">2.0B XDC · 10.5%</span>
+      </div>
+      <input type="range" id="tvlY2" min="50000000" max="7650000000" step="50000000" value="2000000000" />
+      <div class="help">OBC ended; protocol fee share continues.</div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">Year 3 TVL · mature</span>
+        <span class="value" id="vTvlY3">4.0B XDC · 20.9%</span>
+      </div>
+      <input type="range" id="tvlY3" min="50000000" max="7650000000" step="50000000" value="4000000000" />
+      <div class="help">Mature LST · cap at ~7.65B (40% of supply).</div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">Total cohort raise</span>
+        <span class="value" id="vRaise3y">$2.0M</span>
+      </div>
+      <input type="range" id="raise3y" min="2000000" max="5000000" step="100000" value="2000000" />
+      <div class="help">Synced with Year-1 tab.</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: PER-YEAR BREAKDOWN -->
+  <div class="panel">
+    <div class="panel-title">PER-YEAR BREAKDOWN</div>
+
+    <table class="year-table">
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>Base</th>
+          <th>Protocol</th>
+          <th>OBC</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="yearTbody"></tbody>
+    </table>
+
+    <div class="mini-stats" style="grid-template-columns: repeat(3, 1fr); margin-top: 18px;">
+      <div class="mini-stat">
+        <div class="label">CUMULATIVE R₁ (BASE)</div>
+        <div class="value" id="m3yBase">—</div>
+      </div>
+      <div class="mini-stat">
+        <div class="label">CUMULATIVE R₃ (PROTOCOL)</div>
+        <div class="value" id="m3yProto">—</div>
+      </div>
+      <div class="mini-stat">
+        <div class="label">YEAR-1 R₄ (OBC)</div>
+        <div class="value" id="m3yObc">—</div>
+      </div>
+    </div>
+
+    <!-- ========== EXIT SCENARIOS ========== -->
+    <div class="exit-section">
+      <div class="panel-title">EXIT SCENARIOS &amp; IRR</div>
+      <div style="font-size:12px; color:var(--muted); margin-top:-6px; margin-bottom:12px; font-style:italic;">
+        Click an exit year to see the cash-flow detail. Principal recovers at exit; protocol fee share (R₃) continues for the full 3-year window regardless of exit timing.
+      </div>
+
+      <div class="exit-grid" id="exitGrid"></div>
+
+      <table class="cf-table" id="cfTable">
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Revenue</th>
+            <th>Principal</th>
+            <th>Net cash flow</th>
+          </tr>
+        </thead>
+        <tbody id="cfTbody"></tbody>
+      </table>
+    </div>
+
+    <div class="narrative" id="narrative3y">
+      Move the sliders to see the 3-year breakdown.
+    </div>
+  </div>
+</div>
+
+</div><!-- /tab-y3 -->
+
+<!-- MATH MODEL -->
+<details>
+  <summary>How the math works (click to expand)</summary>
+  <div class="math-content">
+    <p>The LP earns from <b>five revenue streams</b>. The simulator computes each stream from the inputs above and sums them to get the projected APY.</p>
+
+    <h3>1. Base staking yield</h3>
+    <p>The LP's investment is split into a stake portion (96.4%) and a dev funding portion (3.6%). The stake portion buys XDC, which is delegated to validators and earns the network reward (9% gross), minus the 15% protocol fee.</p>
+    <div class="formula">R₁ = I_stake × r × (1 − f)</div>
+    <p>where I_stake = LP investment net of dev contribution, r = 9% network APR, f = 15% protocol fee.</p>
+
+    <h3>2. Validator operations margin</h3>
+    <p>Each LP-funded node has its own operating P&amp;L: 50% of the protocol fee it generates, minus per-node opex (~$2,250/year). The LP captures their pro-rata share of the cohort's validator margin.</p>
+    <div class="formula">R₂ = N_LP × (A_node × r × f × P × ν − C_opex,node)</div>
+    <p>where N_LP = LP's pro-rata cohort nodes, A_node = 10M XDC, ν = 50% (node ops share of fee), P = XDC price.</p>
+
+    <h3>3. Protocol fee share</h3>
+    <p>The protocol's share of the 15% fee accrues across the entire LST TVL (not just LP-funded stake). After protocol opex, the LP captures their <b>tier rate × pro-rata</b> of the resulting margin.</p>
+    <div class="formula">R₃ = ρ × λ × max(0, S × r × f × P × (1−ν) − C_opex,protocol)</div>
+    <p>where ρ = tier rate (0.20 / 0.30 / 0.40), λ = LP pro-rata in cohort = I/T, S = total LST TVL.</p>
+
+    <h3>4. Outcome-based compensation (OBC)</h3>
+    <p>A network-funded XDC bonus pool tied to active validator count. Pays monthly. Rate steps up at 20-node and 75-node milestones. The LP captures their <b>tier rate × pro-rata</b> of the pool.</p>
+    <div class="formula">R₄ = ρ × λ × N × A_node × ω(N) × 12 × P</div>
+    <p>where ω(N) = 0.0005 if N ≤ 20, 0.0006 if 20 &lt; N ≤ 75, 0.0007 if N &gt; 75.</p>
+
+    <h3>How the tier rate works</h3>
+    <p>Each LP's effective claim on the discretionary buckets (R₃, R₄) is <code>ρ × λ</code>, where ρ depends on ticket size. The remainder of the bucket stays with the protocol/foundation. Total LP cohort take depends on the cohort composition:</p>
+    <table>
+      <tr><th>Tier</th><th>Ticket</th><th>Rate (ρ)</th><th>Per-$1k yield rate</th></tr>
+      <tr><td>Standard</td><td>$250k</td><td>20%</td><td>1.0× baseline</td></tr>
+      <tr><td>Strategic</td><td>$500k</td><td>30%</td><td>1.5× baseline</td></tr>
+      <tr><td>Anchor</td><td>$1M</td><td>40%</td><td>2.0× baseline</td></tr>
+    </table>
+    <p>Maximum cohort distribution = 40% of pool (when cohort is fully filled with anchors). With a mixed cohort the distributed share is lower. Example: 2×$250k + $500k + $1M cohort distributes 32.5% of the pool; the remaining 67.5% stays with the protocol/foundation.</p>
+
+    <h3>5. Token mark-to-market (informational, not in APY)</h3>
+    <p>If XDC price appreciates over the lock period, the LP captures 100% of the gain on their staked principal. The simulator assumes constant price, so this is not added to APY but shown separately when relevant.</p>
+
+    <h3>Total</h3>
+    <div class="formula">APY = (R₁ + R₂ + R₃ + R₄) / I</div>
+
+    <h3>Constants used in this model</h3>
+    <table>
+      <tr><th>Symbol</th><th>Value</th><th>Description</th></tr>
+      <tr><td>r</td><td>9.00%</td><td>Network gross staking APR</td></tr>
+      <tr><td>f</td><td>15.00%</td><td>Protocol fee on staking rewards</td></tr>
+      <tr><td>ν</td><td>50.00%</td><td>Share of fee flowing to node operations</td></tr>
+      <tr><td>ρ</td><td>20% / 30% / 40%</td><td>Tier rate by ticket size (Standard / Strategic / Anchor)</td></tr>
+      <tr><td>A_node</td><td>10,000,000 XDC</td><td>Stake per validator node</td></tr>
+      <tr><td>D</td><td>$60,000</td><td>Dev funding tranche per cohort</td></tr>
+      <tr><td>C_opex,node</td><td>$2,250 / yr</td><td>Per-node operating cost</td></tr>
+      <tr><td>C_opex,protocol</td><td>$40k + $740·N / yr</td><td>Protocol opex (scales with active nodes)</td></tr>
+    </table>
+
+    <p style="font-style:italic;color:var(--muted);margin-top:14px">
+      With the tier-rate × pro-rata mechanic, a $1M anchor LP at full network ramp (1B XDC TVL, $0.0325) reproduces the central-case ~15% APY from the underlying economic spreadsheet. Smaller tickets land lower because the tier rate is smaller; the tradeoff is that the protocol/foundation retains a larger share of each bucket.
+    </p>
+  </div>
+</details>
+
+<footer>
+  Model output is illustrative. Final terms subject to definitive documentation.<br>
+  Protofire · diego@protofire.io
+</footer>
+
+</div>
+
+<script>
+// ============== CONSTANTS ==============
+const R = 0.09;                       // network APR
+const F = 0.15;                       // protocol fee
+const NU = 0.50;                      // node operations share
+const A_NODE = 10_000_000;            // XDC per node
+const D = 60_000;                     // dev tranche per cohort (USD)
+const C_NODE = 2_250;                 // per-node opex / year (USD)
+
+// XDC network context (May 2026 reference)
+const SUPPLY = 19_089_357_591;        // circulating supply (XDC)
+const NETWORK_STAKED = 2_600_000_000; // currently staked across the network (XDC)
+
+// LP entry price — XDC purchase price at commitment.
+// LP holds XDC tokens, so revenue and principal recovery are valued
+// at the prevailing price (state.price), not the entry price.
+const ENTRY_PRICE = 0.0325;
+
+function protocolOpex(N) {
+  // Smooth approximation calibrated against spreadsheet: 82k @ 55 nodes, 114k @ 100 nodes
+  return 40_000 + 740 * N;
+}
+
+function obcRate(N) {
+  if (N <= 20) return 0.0005;
+  if (N <= 75) return 0.0006;
+  return 0.0007;
+}
+
+// ============== STATE ==============
+const state = {
+  ticket: 250_000,
+  price: 0.0325,
+  tvl: 500_000_000,                   // Year-1 tab single-year TVL (~2.6% of supply)
+  raise: 2_000_000,
+  lock: 24,
+  tierRate: 0.20,                     // auto-derived from ticket: 250k=0.20, 500k=0.30, 1M=0.40
+  tierLabel: "Standard",
+  // 3-year tab: TVL ramp curve (% of XDC supply: 2.6% → 10.5% → 21%)
+  tvl_y1: 500_000_000,
+  tvl_y2: 2_000_000_000,
+  tvl_y3: 4_000_000_000,
+  // Exit-scenario selector (1, 2, or 3)
+  exitYear: 3,
+};
+
+// ============== COMPUTE ==============
+function compute(s) {
+  const { ticket, price, tvl, raise, lock, tierRate } = s;
+
+  const N = tvl / A_NODE;                          // active network nodes
+  const lambda = ticket / raise;                   // LP pro-rata in cohort
+  const lpDev = lambda * D;                        // LP dev contribution
+  const stakeUSD = Math.max(0, ticket - lpDev);    // LP stake in USD (at entry)
+  const A_LP = stakeUSD / ENTRY_PRICE;             // LP staked XDC — locked at entry price
+
+  // Cohort nodes (funded at entry price)
+  const cohortStakeUSD = Math.max(0, raise - D);
+  const N_cohort = cohortStakeUSD / (A_NODE * ENTRY_PRICE);
+  const N_LP = lambda * N_cohort;
+
+  // Tier-weighted effective share (applied to discretionary buckets R3 and R4)
+  const tierShare = tierRate * lambda;             // tier_rate × pro-rata
+
+  // 1) Base staking yield — XDC reward × current price (USD)
+  const R1 = A_LP * R * (1 - F) * price;
+
+  // 2) Validator operations margin (per-node fees valued at current price)
+  const nodeFeeRev = A_NODE * R * F * price * NU;
+  const nodeMargin = nodeFeeRev - C_NODE;
+  const R2 = N_LP * nodeMargin;
+
+  // 3) Protocol fee share — tier_rate × pro-rata × max(0, protocol margin)
+  const protoRev = tvl * R * F * price * (1 - NU);
+  const protoOpex = protocolOpex(N);
+  const protoMargin = protoRev - protoOpex;
+  const R3 = tierShare * Math.max(0, protoMargin);
+
+  // 4) OBC — tier_rate × pro-rata × OBC pool
+  const omega = obcRate(N);
+  const obcAnnualXDC = N * A_NODE * omega * 12;
+  const obcAnnualUSD = obcAnnualXDC * price;
+  const R4 = tierShare * obcAnnualUSD;
+
+  const total = R1 + R2 + R3 + R4;
+  const apy = total / ticket;
+
+  return {
+    N, lambda, lpDev, stakeUSD, A_LP, tierShare,
+    N_cohort, N_LP,
+    R1, R2, R3, R4,
+    nodeMargin, protoMargin, protoRev, protoOpex,
+    obcAnnualUSD,
+    total, apy,
+  };
+}
+
+// ============== 3-YEAR COMPUTE ==============
+// Compute a single year given the LP's fixed staking position and the year's TVL.
+// includeObc = true only for year 1.
+function computeYear(s, tvl, includeObc) {
+  const N = tvl / A_NODE;
+  const lambda = s.ticket / s.raise;
+  const lpDev = lambda * D;
+  const stakeUSD = Math.max(0, s.ticket - lpDev);                // USD allocated at entry
+  const A_LP = stakeUSD / ENTRY_PRICE;                           // XDC quantity locked at entry
+  const cohortStakeUSD = Math.max(0, s.raise - D);
+  const N_cohort = cohortStakeUSD / (A_NODE * ENTRY_PRICE);      // funded at entry price
+  const N_LP = lambda * N_cohort;
+  const tierShare = s.tierRate * lambda;
+
+  // R1 — base staking on LP's XDC, valued at current price
+  const R1 = A_LP * R * (1 - F) * s.price;
+
+  // R2 — node ops margin (per-node fees valued at current price)
+  const nodeMargin = A_NODE * R * F * s.price * NU - C_NODE;
+  const R2 = N_LP * nodeMargin;
+
+  // R3 — protocol fee share (depends on year's TVL × current price)
+  const protoRev = tvl * R * F * s.price * (1 - NU);
+  const protoMargin = protoRev - protocolOpex(N);
+  const R3 = tierShare * Math.max(0, protoMargin);
+
+  // R4 — OBC (only year 1)
+  let R4 = 0;
+  if (includeObc) {
+    const omega = obcRate(N);
+    const obcUSD = N * A_NODE * omega * 12 * s.price;
+    R4 = tierShare * obcUSD;
+  }
+
+  return { R1, R2, R3, R4, total: R1 + R2 + R3 + R4, N, protoMargin, A_LP };
+}
+
+function compute3y(s) {
+  const y1 = computeYear(s, s.tvl_y1, true);    // OBC active
+  const y2 = computeYear(s, s.tvl_y2, false);   // OBC ended
+  const y3 = computeYear(s, s.tvl_y3, false);   // OBC ended
+
+  const sumR1 = y1.R1 + y2.R1 + y3.R1;
+  const sumR2 = y1.R2 + y2.R2 + y3.R2;
+  const sumR3 = y1.R3 + y2.R3 + y3.R3;
+  const sumR4 = y1.R4 + y2.R4 + y3.R4;
+  const cumulative = y1.total + y2.total + y3.total;
+  const cumPct = cumulative / s.ticket;
+  const annualizedAPY = cumPct / 3;             // simple annualization
+
+  return { y1, y2, y3, sumR1, sumR2, sumR3, sumR4, cumulative, cumPct, annualizedAPY };
+}
+
+// ============== IRR / CASH FLOW ==============
+// Bisection IRR solver — robust for the cash-flow shapes we generate.
+function computeIRR(cashFlows, lo = -0.99, hi = 5.0, tol = 1e-7, maxIter = 200) {
+  const npv = (rate) => cashFlows.reduce((acc, cf, t) => acc + cf / Math.pow(1 + rate, t), 0);
+  let nLo = npv(lo), nHi = npv(hi);
+  if (nLo * nHi > 0) return NaN;                 // no sign change → unsolvable
+  for (let i = 0; i < maxIter; i++) {
+    const mid = (lo + hi) / 2;
+    const nMid = npv(mid);
+    if (Math.abs(nMid) < tol || (hi - lo) / 2 < tol) return mid;
+    if (nLo * nMid < 0) { hi = mid; nHi = nMid; }
+    else { lo = mid; nLo = nMid; }
+  }
+  return (lo + hi) / 2;
+}
+
+// Build cash flows + IRR for a given exit year (1, 2, or 3).
+// Key deal mechanic: R₃ (protocol fee share) persists for the full 3 years
+// even after the LP recovers their stake, because the dev funding tranche
+// gives a contractual claim independent of stake duration.
+function computeExit(s, exitYear) {
+  const c = compute3y(s);
+  const years = [c.y1, c.y2, c.y3];
+
+  const lambda = s.ticket / s.raise;
+  const stakeUSDatEntry = Math.max(0, s.ticket - lambda * D);
+  const A_LP = stakeUSDatEntry / ENTRY_PRICE;                // XDC tokens held by LP
+  // Principal recovery = LP's XDC × current price (token MTM applied)
+  const I_stake = A_LP * s.price;
+
+  // Cash flows: always 4 entries (T0, Y1, Y2, Y3)
+  const cashFlows = [-s.ticket];
+  const rows = [{ period: "Year 0", revenue: 0, principal: -s.ticket, net: -s.ticket, isOutflow: true }];
+
+  for (let t = 1; t <= 3; t++) {
+    const y = years[t - 1];
+    let rev, principalReturn = 0, isPostExit = false;
+
+    if (t <= exitYear) {
+      // Pre-exit / at-exit: full revenue from all streams
+      rev = y.total;
+      if (t === exitYear) principalReturn = I_stake;
+    } else {
+      // Post-exit: R₃ continues (fee share persists beyond capital lock)
+      rev = y.R3;
+      isPostExit = true;
+    }
+
+    const net = rev + principalReturn;
+    cashFlows.push(net);
+    rows.push({
+      period: "Year " + t,
+      revenue: rev,
+      principal: principalReturn,
+      net,
+      isExit: t === exitYear,
+      isPostExit,
+    });
+  }
+
+  const irr = computeIRR(cashFlows);
+  const totalInflow = cashFlows.slice(1).reduce((a, b) => a + b, 0);
+  const netReturn = totalInflow - s.ticket;
+  const cumPct = netReturn / s.ticket;
+  const simpleAnnual = cumPct / 3;                         // measured over the 3-year fee-share window
+
+  // Net row
+  rows.push({ period: "Net (cumulative)", revenue: null, principal: null, net: netReturn, isNet: true });
+
+  return { cashFlows, irr, totalInflow, netReturn, cumPct, simpleAnnual, rows, I_stake, exitYear };
+}
+
+// ============== FORMATTERS ==============
+function fmtUSD(n, decimals = 0) {
+  if (Math.abs(n) >= 1_000_000) return "$" + (n / 1_000_000).toFixed(2) + "M";
+  if (Math.abs(n) >= 1_000) return "$" + (n / 1_000).toFixed(decimals === 0 ? 0 : 1) + "k";
+  return "$" + n.toFixed(0);
+}
+function fmtUSDFull(n) {
+  const sign = n < 0 ? "-" : "";
+  return sign + "$" + Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
+function fmtXDC(n) {
+  if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(2) + "B XDC";
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M XDC";
+  if (n >= 1_000) return (n / 1_000).toFixed(0) + "k XDC";
+  return n.toFixed(0) + " XDC";
+}
+// TVL label combining absolute XDC and % of circulating supply
+function fmtTvl(n) {
+  return fmtXDC(n) + " · " + (n / SUPPLY * 100).toFixed(1) + "% of supply";
+}
+function fmtPct(n, dec = 2) { return (n * 100).toFixed(dec) + "%"; }
+
+// ============== RENDER ==============
+function render() {
+  const c = compute(state);
+
+  // Hero
+  document.getElementById("apy").textContent = fmtPct(c.apy);
+  document.getElementById("totalRev").textContent = fmtUSDFull(c.total);
+  document.getElementById("totalLock").textContent = fmtUSDFull(c.total * (state.lock / 12));
+
+  // Slider value labels
+  document.getElementById("vTicket").textContent = fmtUSDFull(state.ticket) + " · " + state.tierLabel + " · " + (state.tierRate * 100).toFixed(0) + "%";
+  document.getElementById("vPrice").textContent = "$" + state.price.toFixed(4);
+  document.getElementById("vTvl").textContent = fmtTvl(state.tvl);
+  document.getElementById("vNodes").textContent = c.N.toFixed(0);
+  document.getElementById("vRaise").textContent = "$" + (state.raise / 1_000_000).toFixed(1) + "M";
+  document.getElementById("vLock").textContent = state.lock + " mo";
+
+  // Mini stats
+  document.getElementById("mStake").textContent = fmtXDC(c.A_LP);
+  document.getElementById("mShare").textContent = fmtPct(c.lambda, 1) + " × " + (state.tierRate * 100).toFixed(0) + "% = " + fmtPct(c.tierShare, 2);
+  document.getElementById("mProto").textContent = fmtUSDFull(c.protoMargin);
+
+  // Stack breakdown — Node ops (R2) is computed internally but not shown
+  const items = [
+    { name: "Base staking",            value: c.R1 },
+    { name: "Protocol P&L share",      value: c.R3 },
+    { name: "Outcome-based bonus",     value: c.R4 },
+  ];
+  const visibleSum = items.reduce((a, i) => a + i.value, 0);
+  const maxAbs = Math.max(...items.map(i => Math.abs(i.value)), 1);
+  const stackEl = document.getElementById("stack");
+  stackEl.innerHTML = items.map(i => {
+    const pct = (i.value / (visibleSum || 1)) * 100;
+    const widthPct = (Math.abs(i.value) / maxAbs) * 100;
+    const isNeg = i.value < 0;
+    return `
+      <div class="stack-item">
+        <div class="stack-name">${i.name}</div>
+        <div class="stack-bar-bg"><div class="stack-bar ${isNeg ? "neg" : ""}" style="width:${widthPct}%"></div></div>
+        <div class="stack-val ${isNeg ? "neg" : ""}">${fmtUSDFull(i.value)}</div>
+        <div class="stack-pct">${isFinite(pct) ? pct.toFixed(0) + "%" : "—"}</div>
+      </div>
+    `;
+  }).join("");
+
+  // Narrative
+  const dominant = items.slice().sort((a, b) => b.value - a.value)[0];
+  const narr = document.getElementById("narrative");
+  let warning = "";
+  if (c.protoMargin <= 0) {
+    warning = " <b>Note:</b> at this TVL the protocol P&L is negative, so the LP captures $0 from the fee-share bucket — most of the yield comes from base staking and OBC.";
+  }
+  narr.innerHTML = `Your ticket of <b>${fmtUSDFull(state.ticket)}</b> at XDC <b>$${state.price.toFixed(4)}</b> with <b>${fmtXDC(state.tvl)}</b> of LST TVL produces a <b>${fmtPct(c.apy)}</b> annual APY. The largest contributor is <b>${dominant.name}</b> (${fmtUSDFull(dominant.value)}).${warning}`;
+}
+
+// ============== RENDER 3-YEAR ==============
+function render3y() {
+  const c = compute3y(state);
+
+  // Hero
+  document.getElementById("apy3y").textContent = fmtPct(c.annualizedAPY);
+  document.getElementById("totalRev3y").textContent = fmtUSDFull(c.cumulative);
+  document.getElementById("cumPct3y").textContent = fmtPct(c.cumPct, 1);
+
+  // Slider value labels
+  document.getElementById("vTicket3y").textContent = fmtUSDFull(state.ticket) + " · " + state.tierLabel + " · " + (state.tierRate * 100).toFixed(0) + "%";
+  document.getElementById("vPrice3y").textContent = "$" + state.price.toFixed(4);
+  document.getElementById("vTvlY1").textContent = fmtTvl(state.tvl_y1);
+  document.getElementById("vTvlY2").textContent = fmtTvl(state.tvl_y2);
+  document.getElementById("vTvlY3").textContent = fmtTvl(state.tvl_y3);
+  document.getElementById("vRaise3y").textContent = "$" + (state.raise / 1_000_000).toFixed(1) + "M";
+
+  // Sync slider DOM positions (in case state changed from another tab)
+  document.getElementById("price3y").value = state.price;
+  document.getElementById("raise3y").value = state.raise;
+
+  // Year-by-year table — Node ops (R2) computed internally but not shown
+  const rows = [
+    { label: "Year 1", sub: "OBC active", d: c.y1 },
+    { label: "Year 2", sub: "OBC ended", d: c.y2 },
+    { label: "Year 3", sub: "OBC ended", d: c.y3 },
+  ];
+  const tbody = document.getElementById("yearTbody");
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.label}<span class="yr-label">${r.sub}</span></td>
+      <td>${fmtUSDFull(r.d.R1)}</td>
+      <td>${fmtUSDFull(r.d.R3)}</td>
+      <td>${r.d.R4 > 0 ? fmtUSDFull(r.d.R4) : "—"}</td>
+      <td>${fmtUSDFull(r.d.total)}</td>
+    </tr>
+  `).join("") + `
+    <tr class="totals">
+      <td>3-year total</td>
+      <td>${fmtUSDFull(c.sumR1)}</td>
+      <td>${fmtUSDFull(c.sumR3)}</td>
+      <td>${fmtUSDFull(c.sumR4)}</td>
+      <td>${fmtUSDFull(c.cumulative)}</td>
+    </tr>
+  `;
+
+  // Mini stats
+  document.getElementById("m3yBase").textContent = fmtUSDFull(c.sumR1);
+  document.getElementById("m3yProto").textContent = fmtUSDFull(c.sumR3);
+  document.getElementById("m3yObc").textContent = fmtUSDFull(c.sumR4);
+
+  // ===== Exit scenario cards =====
+  const exits = [1, 2, 3].map(y => ({ y, ...computeExit(state, y) }));
+  const exitGrid = document.getElementById("exitGrid");
+  exitGrid.innerHTML = exits.map(e => `
+    <div class="exit-card ${e.y === state.exitYear ? "active" : ""}" data-exit="${e.y}">
+      <div class="label">Exit at end of</div>
+      <div class="timing">Year ${e.y} · ${e.y * 12} mo</div>
+      <div class="irr-label" style="margin-top:12px">IRR</div>
+      <div class="irr">${isFinite(e.irr) ? fmtPct(e.irr, 2) : "—"}</div>
+      <div class="total-return">
+        Net return  <b style="float:right">${fmtUSDFull(e.netReturn)}</b><br>
+        Cumulative  <b style="float:right">${fmtPct(e.cumPct, 1)}</b>
+      </div>
+    </div>
+  `).join("");
+
+  // Re-bind click listeners (cards re-rendered each render)
+  document.querySelectorAll(".exit-card").forEach(card => {
+    card.addEventListener("click", () => {
+      state.exitYear = parseInt(card.dataset.exit, 10);
+      renderAll();
+    });
+  });
+
+  // ===== Cash-flow table for selected exit =====
+  const sel = exits.find(e => e.y === state.exitYear);
+  const cfTbody = document.getElementById("cfTbody");
+  cfTbody.innerHTML = sel.rows.map(r => {
+    if (r.isNet) {
+      return `<tr class="cf-net">
+        <td>${r.period}</td>
+        <td>—</td>
+        <td>—</td>
+        <td>${fmtUSDFull(r.net)} <span style="font-weight:400; color:var(--muted); font-size:11px;">(${fmtPct(r.net / state.ticket, 1)})</span></td>
+      </tr>`;
+    }
+    const netClass = r.net < 0 ? "cf-neg" : (r.net > 0 ? "cf-pos" : "");
+    let badge = "";
+    if (r.isExit) badge = ' <span class="yr-label" style="display:inline; margin-left:6px; color:var(--orange-dark);">EXIT · principal recovered</span>';
+    else if (r.isPostExit) badge = ' <span class="yr-label" style="display:inline; margin-left:6px; color:var(--muted);">post-exit · fee share only (R₃)</span>';
+    return `<tr>
+      <td>${r.period}${badge}</td>
+      <td>${r.revenue !== 0 ? fmtUSDFull(r.revenue) : "—"}</td>
+      <td>${r.principal !== 0 ? fmtUSDFull(r.principal) : "—"}</td>
+      <td class="${netClass}">${fmtUSDFull(r.net)}</td>
+    </tr>`;
+  }).join("");
+
+  // ===== Narrative =====
+  const r3Pct = c.cumulative > 0 ? (c.sumR3 / c.cumulative * 100) : 0;
+  const obcPct = c.cumulative > 0 ? (c.sumR4 / c.cumulative * 100) : 0;
+  const basePct = c.cumulative > 0 ? (c.sumR1 / c.cumulative * 100) : 0;
+  const irrSel = isFinite(sel.irr) ? fmtPct(sel.irr, 2) : "—";
+  document.getElementById("narrative3y").innerHTML =
+    `Holding to <b>Year ${state.exitYear}</b>, your <b>${fmtUSDFull(state.ticket)}</b> ticket produces an IRR of <b>${irrSel}</b> ` +
+    `(net return <b>${fmtUSDFull(sel.netReturn)}</b> = <b>${fmtPct(sel.cumPct, 1)}</b> on principal). ` +
+    `If held the full 3 years: revenue mix <b>${basePct.toFixed(0)}%</b> base · <b>${r3Pct.toFixed(0)}%</b> protocol · <b>${obcPct.toFixed(0)}%</b> OBC.`;
+}
+
+// ============== RENDER ALL ==============
+function renderAll() {
+  // Keep slider DOM in sync with state across both tabs
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  setVal("price", state.price);
+  setVal("raise", state.raise);
+  setVal("price3y", state.price);
+  setVal("raise3y", state.raise);
+  setVal("tvl", state.tvl);
+  setVal("tvlY1", state.tvl_y1);
+  setVal("tvlY2", state.tvl_y2);
+  setVal("tvlY3", state.tvl_y3);
+
+  // Highlight the matching scenario button (or none, if user dragged sliders away)
+  const snap = (n) => Math.round(n / 50_000_000) * 50_000_000;
+  document.querySelectorAll(".scn-y1").forEach(b => {
+    const target = snap(SUPPLY * parseFloat(b.dataset.pct));
+    b.classList.toggle("active", state.tvl === target);
+  });
+  document.querySelectorAll(".scn-3y").forEach(b => {
+    const pct = parseFloat(b.dataset.pct);
+    const matches =
+      state.tvl_y1 === snap(SUPPLY * pct * 0.20) &&
+      state.tvl_y2 === snap(SUPPLY * pct * 0.60) &&
+      state.tvl_y3 === snap(SUPPLY * pct * 1.00);
+    b.classList.toggle("active", matches);
+  });
+
+  render();
+  render3y();
+}
+
+// ============== EVENTS ==============
+function bind(id, key, parser = parseFloat) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener("input", () => {
+    state[key] = parser(el.value);
+    renderAll();
+  });
+}
+
+// Tab 1 (Year 1)
+bind("price", "price");
+bind("tvl", "tvl");
+bind("raise", "raise");
+bind("lock", "lock", v => parseInt(v, 10));
+
+// Tab 2 (3-Year)
+bind("price3y", "price");                // synced — same state field
+bind("raise3y", "raise");                // synced — same state field
+bind("tvlY1", "tvl_y1");
+bind("tvlY2", "tvl_y2");
+bind("tvlY3", "tvl_y3");
+
+// Ticket buttons — sync across both tabs
+document.querySelectorAll(".ticket-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    state.ticket = parseFloat(btn.dataset.ticket);
+    state.tierRate = parseFloat(btn.dataset.rate);
+    state.tierLabel = btn.dataset.label;
+    // Highlight matching button in BOTH tabs
+    document.querySelectorAll(".ticket-btn").forEach(b => {
+      b.classList.toggle("active", parseFloat(b.dataset.ticket) === state.ticket);
+    });
+    renderAll();
+  });
+});
+
+// Tab switcher
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
+  });
+});
+
+// Quick-scenario buttons (Year-1 tab) — snap TVL to N% of supply
+document.querySelectorAll(".scn-y1").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const pct = parseFloat(btn.dataset.pct);
+    state.tvl = Math.round(SUPPLY * pct / 50_000_000) * 50_000_000;   // snap to 50M step
+    document.querySelectorAll(".scn-y1").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderAll();
+  });
+});
+
+// Quick-scenario buttons (3-Year tab) — set a ramp curve targeting that Y3 share.
+// Ramp: Y1 = 20% of target, Y2 = 60% of target, Y3 = target.
+document.querySelectorAll(".scn-3y").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const pct = parseFloat(btn.dataset.pct);
+    const snap = (n) => Math.round(n / 50_000_000) * 50_000_000;
+    state.tvl_y1 = snap(SUPPLY * pct * 0.20);
+    state.tvl_y2 = snap(SUPPLY * pct * 0.60);
+    state.tvl_y3 = snap(SUPPLY * pct * 1.00);
+    document.querySelectorAll(".scn-3y").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderAll();
+  });
+});
+
+renderAll();
+</script>
+</body>
+</html>
