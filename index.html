@@ -417,8 +417,6 @@
   <div class="hero-right">
     <div class="label">ANNUAL REVENUE</div>
     <div class="val" id="totalRev">—</div>
-    <div class="label" style="margin-top:14px">RETURN OVER LOCK</div>
-    <div class="val" id="totalLock">—</div>
   </div>
 </div>
 
@@ -480,14 +478,6 @@
       </div>
       <input type="range" id="raise" min="2000000" max="5000000" step="100000" value="2000000" />
       <div class="help">Sum of all LP tickets in this cohort. Determines your pro-rata.</div>
-    </div>
-
-    <div class="control">
-      <div class="control-label">
-        <span class="name">Lock period</span>
-        <span class="value" id="vLock">24 mo</span>
-      </div>
-      <input type="range" id="lock" min="12" max="48" step="6" value="24" />
     </div>
 
   </div>
@@ -782,7 +772,6 @@ const state = {
   price: 0.0325,
   tvl: 500_000_000,                   // Year-1 tab single-year TVL (~2.6% of supply)
   raise: 2_000_000,
-  lock: 24,
   tierRate: 0.20,                     // auto-derived from ticket: 250k=0.20, 500k=0.30, 1M=0.40
   tierLabel: "Standard",
   // 3-year tab: TVL ramp curve (% of XDC supply: 2.6% → 10.5% → 21%)
@@ -795,7 +784,7 @@ const state = {
 
 // ============== COMPUTE ==============
 function compute(s) {
-  const { ticket, price, tvl, raise, lock, tierRate } = s;
+  const { ticket, price, tvl, raise, tierRate } = s;
 
   const N = tvl / A_NODE;                          // active network nodes
   const lambda = ticket / raise;                   // LP pro-rata in cohort
@@ -998,7 +987,6 @@ function render() {
   // Hero
   document.getElementById("apy").textContent = fmtPct(c.apy);
   document.getElementById("totalRev").textContent = fmtUSDFull(c.total);
-  document.getElementById("totalLock").textContent = fmtUSDFull(c.total * (state.lock / 12));
 
   // Slider value labels
   document.getElementById("vTicket").textContent = fmtUSDFull(state.ticket) + " · " + state.tierLabel + " · " + (state.tierRate * 100).toFixed(0) + "%";
@@ -1006,7 +994,6 @@ function render() {
   document.getElementById("vTvl").textContent = fmtTvl(state.tvl);
   document.getElementById("vNodes").textContent = c.N.toFixed(0);
   document.getElementById("vRaise").textContent = "$" + (state.raise / 1_000_000).toFixed(1) + "M";
-  document.getElementById("vLock").textContent = state.lock + " mo";
 
   // Mini stats
   document.getElementById("mStake").textContent = fmtXDC(c.A_LP);
@@ -1202,7 +1189,6 @@ function bind(id, key, parser = parseFloat) {
 bind("price", "price");
 bind("tvl", "tvl");
 bind("raise", "raise");
-bind("lock", "lock", v => parseInt(v, 10));
 
 // Tab 2 (3-Year)
 bind("price3y", "price");                // synced — same state field
