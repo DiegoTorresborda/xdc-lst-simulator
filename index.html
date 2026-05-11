@@ -495,21 +495,39 @@
     </div>
 
     <div class="scenario-row">
-      <span class="scn-label">QUICK SCENARIO</span>
+      <span class="scn-label">RAMP SCENARIO (Y3 TARGET)</span>
       <div class="scn-btns">
-        <button class="scn-btn scn-y1" data-pct="0.10">10%</button>
-        <button class="scn-btn scn-y1" data-pct="0.20">20%</button>
-        <button class="scn-btn scn-y1" data-pct="0.30">30%</button>
+        <button class="scn-btn scn-3y" data-pct="0.10">10%</button>
+        <button class="scn-btn scn-3y" data-pct="0.20">20%</button>
+        <button class="scn-btn scn-3y" data-pct="0.30">30%</button>
       </div>
     </div>
 
     <div class="control">
       <div class="control-label">
-        <span class="name">LST TVL (market share)</span>
-        <span class="value" id="vTvl">500M XDC · 2.6% of supply</span>
+        <span class="name">Year 1 TVL · early ramp</span>
+        <span class="value" id="vTvlY1A">500M XDC · 2.6%</span>
       </div>
-      <input type="range" id="tvl" min="50000000" max="7650000000" step="50000000" value="500000000" />
-      <div class="help"><span id="vNodes">50</span> active validator nodes · cap at ~7.65B XDC (40% of supply).</div>
+      <input type="range" id="tvlY1A" min="50000000" max="7650000000" step="50000000" value="500000000" />
+      <div class="help"><span id="vNodes">50</span> active validator nodes. This drives the Year-1 snapshot APY shown above.</div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">Year 2 TVL · growth</span>
+        <span class="value" id="vTvlY2A">2.0B XDC · 10.5%</span>
+      </div>
+      <input type="range" id="tvlY2A" min="50000000" max="7650000000" step="50000000" value="2000000000" />
+      <div class="help">Used by 3-Year cumulative and P&amp;L tabs.</div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">Year 3 TVL · mature</span>
+        <span class="value" id="vTvlY3A">4.0B XDC · 20.9%</span>
+      </div>
+      <input type="range" id="tvlY3A" min="50000000" max="7650000000" step="50000000" value="4000000000" />
+      <div class="help">Used by 3-Year cumulative and P&amp;L tabs.</div>
     </div>
 
     <div class="control">
@@ -913,18 +931,18 @@ function obcRate(N) {
 }
 
 // ============== STATE ==============
+// All tabs share the same scenario: one set of inputs drives Year-1, 3-Year, and P&L views.
 const state = {
   ticket: 250_000,
   price: 0.0325,
-  tvl: 500_000_000,                   // Year-1 tab single-year TVL (~2.6% of supply)
   raise: 2_000_000,
   tierRate: 0.20,                     // auto-derived from ticket: 250k=0.20, 500k=0.30, 1M=0.40
   tierLabel: "Standard",
-  // 3-year tab: TVL ramp curve (% of XDC supply: 2.6% → 10.5% → 21%)
+  // 3-year TVL ramp curve (% of XDC supply: 2.6% → 10.5% → 21%)
   tvl_y1: 500_000_000,
   tvl_y2: 2_000_000_000,
   tvl_y3: 4_000_000_000,
-  // Exit-scenario selector (1, 2, or 3)
+  // Exit-scenario selector for 3-Year tab (1, 2, or 3)
   exitYear: 3,
   // Protocol P&L tab: cohort take rate (% of net income flowing to LP cohort)
   cohortTakeRate: 0.325,
@@ -932,7 +950,8 @@ const state = {
 
 // ============== COMPUTE ==============
 function compute(s) {
-  const { ticket, price, tvl, raise, tierRate } = s;
+  const { ticket, price, raise, tierRate } = s;
+  const tvl = s.tvl_y1;             // Year-1 view uses Year-1 of the ramp scenario
 
   const N = tvl / A_NODE;                          // active network nodes
   const lambda = ticket / raise;                   // LP pro-rata in cohort
@@ -1177,10 +1196,12 @@ function render() {
   document.getElementById("apy").textContent = fmtPct(c.apy);
   document.getElementById("totalRev").textContent = fmtUSDFull(c.total);
 
-  // Slider value labels
+  // Slider value labels (Year 1 tab inputs share state with other tabs)
   document.getElementById("vTicket").textContent = fmtUSDFull(state.ticket) + " · " + state.tierLabel + " · " + (state.tierRate * 100).toFixed(0) + "%";
   document.getElementById("vPrice").textContent = "$" + state.price.toFixed(4);
-  document.getElementById("vTvl").textContent = fmtTvl(state.tvl);
+  document.getElementById("vTvlY1A").textContent = fmtTvl(state.tvl_y1);
+  document.getElementById("vTvlY2A").textContent = fmtTvl(state.tvl_y2);
+  document.getElementById("vTvlY3A").textContent = fmtTvl(state.tvl_y3);
   document.getElementById("vNodes").textContent = c.N.toFixed(0);
   document.getElementById("vRaise").textContent = "$" + (state.raise / 1_000_000).toFixed(1) + "M";
 
@@ -1405,22 +1426,18 @@ function renderPnl() {
 
 // ============== RENDER ALL ==============
 function renderAll() {
-  // Keep slider DOM in sync with state across all tabs
+  // Keep slider DOM in sync with state across all tabs (each tab has its own
+  // slider IDs, all bound to the same state fields)
   const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-  setVal("price", state.price);     setVal("price3y", state.price);     setVal("pricePnl", state.price);
-  setVal("raise", state.raise);     setVal("raise3y", state.raise);
-  setVal("tvl", state.tvl);
-  setVal("tvlY1", state.tvl_y1);    setVal("tvlY1Pnl", state.tvl_y1);
-  setVal("tvlY2", state.tvl_y2);    setVal("tvlY2Pnl", state.tvl_y2);
-  setVal("tvlY3", state.tvl_y3);    setVal("tvlY3Pnl", state.tvl_y3);
+  setVal("price",  state.price);   setVal("price3y", state.price);   setVal("pricePnl", state.price);
+  setVal("raise",  state.raise);   setVal("raise3y", state.raise);
+  setVal("tvlY1A", state.tvl_y1);  setVal("tvlY1",   state.tvl_y1);  setVal("tvlY1Pnl", state.tvl_y1);
+  setVal("tvlY2A", state.tvl_y2);  setVal("tvlY2",   state.tvl_y2);  setVal("tvlY2Pnl", state.tvl_y2);
+  setVal("tvlY3A", state.tvl_y3);  setVal("tvlY3",   state.tvl_y3);  setVal("tvlY3Pnl", state.tvl_y3);
   setVal("cohortTake", state.cohortTakeRate);
 
-  // Highlight the matching scenario button (or none, if user dragged sliders away)
+  // Highlight the matching ramp-scenario button (or none, if user dragged sliders away)
   const snap = (n) => Math.round(n / 50_000_000) * 50_000_000;
-  document.querySelectorAll(".scn-y1").forEach(b => {
-    const target = snap(SUPPLY * parseFloat(b.dataset.pct));
-    b.classList.toggle("active", state.tvl === target);
-  });
   document.querySelectorAll(".scn-3y").forEach(b => {
     const pct = parseFloat(b.dataset.pct);
     const matches =
@@ -1445,10 +1462,12 @@ function bind(id, key, parser = parseFloat) {
   });
 }
 
-// Tab 1 (Year 1)
-bind("price", "price");
-bind("tvl", "tvl");
-bind("raise", "raise");
+// Tab 1 (Year 1 view) — shares Y1/Y2/Y3 ramp inputs with other tabs
+bind("price",   "price");
+bind("raise",   "raise");
+bind("tvlY1A",  "tvl_y1");
+bind("tvlY2A",  "tvl_y2");
+bind("tvlY3A",  "tvl_y3");
 
 // Tab 2 (3-Year)
 bind("price3y", "price");                // synced — same state field
@@ -1488,18 +1507,7 @@ document.querySelectorAll(".tab").forEach(tab => {
   });
 });
 
-// Quick-scenario buttons (Year-1 tab) — snap TVL to N% of supply
-document.querySelectorAll(".scn-y1").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const pct = parseFloat(btn.dataset.pct);
-    state.tvl = Math.round(SUPPLY * pct / 50_000_000) * 50_000_000;   // snap to 50M step
-    document.querySelectorAll(".scn-y1").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    renderAll();
-  });
-});
-
-// Quick-scenario buttons (3-Year tab) — set a ramp curve targeting that Y3 share.
+// Quick-scenario buttons (shared across all tabs) — set a ramp targeting that Y3 share.
 // Ramp: Y1 = 20% of target, Y2 = 60% of target, Y3 = target.
 document.querySelectorAll(".scn-3y").forEach(btn => {
   btn.addEventListener("click", () => {
