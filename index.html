@@ -288,6 +288,46 @@
     border-radius: 0 0 4px 0; color: var(--orange-dark); font-size: 14px;
   }
 
+  /* Protocol P&L table */
+  .pnl-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 12px; margin-top: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pnl-table th, .pnl-table td {
+    padding: 7px 9px; text-align: right;
+    border-bottom: 1px solid var(--line);
+  }
+  .pnl-table th:first-child, .pnl-table td:first-child { text-align: left; }
+  .pnl-table thead th {
+    background: var(--navy); color: var(--white); font-weight: 700;
+    font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+    border-bottom: none;
+  }
+  .pnl-table tbody td { color: var(--slate); }
+  .pnl-table tbody td:first-child { color: var(--navy); }
+  .pnl-table .pnl-section td {
+    background: var(--light); color: var(--muted);
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+    font-weight: 700; padding-top: 10px; padding-bottom: 6px;
+  }
+  .pnl-table .pnl-indent td:first-child { padding-left: 22px; color: var(--slate); }
+  .pnl-table .pnl-subtotal td {
+    background: var(--light); font-weight: 700; color: var(--navy);
+    border-top: 1px solid var(--line);
+  }
+  .pnl-table .pnl-netincome td {
+    background: var(--accent); color: var(--navy); font-weight: 700;
+    border-top: 2px solid var(--orange); font-size: 13px;
+  }
+  .pnl-table .pnl-netincome td:last-child { color: var(--orange-dark); font-size: 14px; }
+  .pnl-table .pnl-lp td {
+    color: var(--orange-dark); font-weight: 700;
+  }
+  .pnl-table .pnl-lp td:first-child {
+    color: var(--orange-dark);
+  }
+
   /* Exit scenarios */
   .exit-section { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line); }
   .exit-grid {
@@ -402,6 +442,7 @@
 <div class="tabs">
   <div class="tab active" data-tab="y1">Year 1 view</div>
   <div class="tab" data-tab="y3">3-Year cumulative</div>
+  <div class="tab" data-tab="pnl">Protocol P&amp;L</div>
 </div>
 
 <!-- ========== TAB 1: YEAR 1 VIEW ========== -->
@@ -669,6 +710,111 @@
 
 </div><!-- /tab-y3 -->
 
+<!-- ========== TAB 3: PROTOCOL P&L ========== -->
+<div class="tab-content" id="tab-pnl">
+
+<div class="hero">
+  <div>
+    <div class="hero-label">3-YEAR PROTOCOL NET INCOME</div>
+    <div class="hero-value" id="pnlNetIncome">—</div>
+    <div class="hero-sub">Projected income statement of the LST protocol, with LP cohort distribution.</div>
+  </div>
+  <div class="hero-right">
+    <div class="label">LP COHORT TAKE</div>
+    <div class="val" id="pnlLpTake">—</div>
+    <div class="label" style="margin-top:14px">RETAINED BY PROTOCOL</div>
+    <div class="val" id="pnlRetained">—</div>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- LEFT: CONTROLS -->
+  <div class="panel">
+    <div class="panel-title">SCENARIO INPUTS</div>
+
+    <div class="net-ctx">
+      <div class="label">XDC NETWORK CONTEXT (May 2026)</div>
+      <div class="row"><span>Circulating supply</span><b>19.1B XDC</b></div>
+      <div class="row"><span>Currently staked</span><b>~2.6B (13.6%)</b></div>
+    </div>
+
+    <div class="scenario-row">
+      <span class="scn-label">RAMP SCENARIO (Y3 TARGET)</span>
+      <div class="scn-btns">
+        <button class="scn-btn scn-3y" data-pct="0.10">10%</button>
+        <button class="scn-btn scn-3y" data-pct="0.20">20%</button>
+        <button class="scn-btn scn-3y" data-pct="0.30">30%</button>
+      </div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">XDC price (USD)</span>
+        <span class="value" id="vPricePnl">$0.0325</span>
+      </div>
+      <input type="range" id="pricePnl" min="0.005" max="0.10" step="0.0005" value="0.0325" />
+      <div class="help">Synced across tabs.</div>
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">Year 1 TVL</span>
+        <span class="value" id="vTvlY1Pnl">500M XDC · 2.6%</span>
+      </div>
+      <input type="range" id="tvlY1Pnl" min="50000000" max="7650000000" step="50000000" value="500000000" />
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">Year 2 TVL</span>
+        <span class="value" id="vTvlY2Pnl">2.0B XDC · 10.5%</span>
+      </div>
+      <input type="range" id="tvlY2Pnl" min="50000000" max="7650000000" step="50000000" value="2000000000" />
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">Year 3 TVL</span>
+        <span class="value" id="vTvlY3Pnl">4.0B XDC · 20.9%</span>
+      </div>
+      <input type="range" id="tvlY3Pnl" min="50000000" max="7650000000" step="50000000" value="4000000000" />
+    </div>
+
+    <div class="control">
+      <div class="control-label">
+        <span class="name">LP cohort take rate</span>
+        <span class="value" id="vCohortTake">32.5%</span>
+      </div>
+      <input type="range" id="cohortTake" min="0.20" max="0.40" step="0.005" value="0.325" />
+      <div class="help">20% if all-Standard, 40% if all-Anchor. 32.5% = mixed cohort (2×$250k + $500k + $1M).</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: P&L STATEMENT -->
+  <div class="panel">
+    <div class="panel-title">PROJECTED INCOME STATEMENT</div>
+
+    <table class="pnl-table">
+      <thead>
+        <tr>
+          <th>Line item</th>
+          <th>Year 1</th>
+          <th>Year 2</th>
+          <th>Year 3</th>
+          <th>3Y Total</th>
+        </tr>
+      </thead>
+      <tbody id="pnlTbody"></tbody>
+    </table>
+
+    <div class="narrative" id="narrativePnl">
+      Move the sliders to see the projected income statement.
+    </div>
+  </div>
+</div>
+
+</div><!-- /tab-pnl -->
+
 <!-- MATH MODEL -->
 <details>
   <summary>How the math works (click to expand)</summary>
@@ -780,6 +926,8 @@ const state = {
   tvl_y3: 4_000_000_000,
   // Exit-scenario selector (1, 2, or 3)
   exitYear: 3,
+  // Protocol P&L tab: cohort take rate (% of net income flowing to LP cohort)
+  cohortTakeRate: 0.325,
 };
 
 // ============== COMPUTE ==============
@@ -884,6 +1032,47 @@ function compute3y(s) {
   const annualizedAPY = cumPct / 3;             // simple annualization
 
   return { y1, y2, y3, sumR1, sumR2, sumR3, sumR4, cumulative, cumPct, annualizedAPY };
+}
+
+// ============== PROTOCOL P&L ==============
+// Build a per-year income statement for the LST protocol.
+function computeYearPnl(s, tvl) {
+  const N = tvl / A_NODE;
+  // Gross fee revenue: total staking yield × protocol fee rate, USD-valued
+  const grossFees   = tvl * R * F * s.price;
+  // 50% of gross fees flow to node operators, 50% to the protocol P&L
+  const toNodes     = grossFees * NU;
+  const toProtocol  = grossFees * (1 - NU);
+
+  // Opex breakdown — proportional split of protocol_opex(N) = 40k + 740N
+  const totalOpex   = protocolOpex(N);
+  const opsOpex     = totalOpex * 0.50;
+  const devOpex     = totalOpex * 0.30;
+  const ovhOpex     = totalOpex * 0.20;
+
+  const netIncome   = toProtocol - totalOpex;        // may be negative in early years
+  const lpTake      = s.cohortTakeRate * Math.max(0, netIncome);
+  const retained    = Math.max(0, netIncome) - lpTake;
+  // If netIncome < 0, the protocol absorbs the loss (LP doesn't owe anything)
+  const loss        = Math.min(0, netIncome);
+
+  return {
+    N, grossFees, toNodes, toProtocol,
+    opsOpex, devOpex, ovhOpex, totalOpex,
+    netIncome, lpTake, retained, loss,
+  };
+}
+
+function computePnl(s) {
+  const y1 = computeYearPnl(s, s.tvl_y1);
+  const y2 = computeYearPnl(s, s.tvl_y2);
+  const y3 = computeYearPnl(s, s.tvl_y3);
+  const total = {};
+  // Sum every numeric field across years
+  for (const k of Object.keys(y1)) {
+    total[k] = (y1[k] || 0) + (y2[k] || 0) + (y3[k] || 0);
+  }
+  return { y1, y2, y3, total };
 }
 
 // ============== IRR / CASH FLOW ==============
@@ -1143,18 +1332,88 @@ function render3y() {
     `If held the full 3 years: revenue mix <b>${basePct.toFixed(0)}%</b> base · <b>${r3Pct.toFixed(0)}%</b> protocol · <b>${obcPct.toFixed(0)}%</b> OBC.`;
 }
 
+// ============== RENDER P&L ==============
+function renderPnl() {
+  const p = computePnl(state);
+
+  // Hero
+  document.getElementById("pnlNetIncome").textContent = fmtUSDFull(p.total.netIncome);
+  document.getElementById("pnlLpTake").textContent    = fmtUSDFull(p.total.lpTake) + "  (" + (state.cohortTakeRate * 100).toFixed(1) + "%)";
+  document.getElementById("pnlRetained").textContent  = fmtUSDFull(p.total.retained);
+
+  // Slider value labels
+  document.getElementById("vPricePnl").textContent  = "$" + state.price.toFixed(4);
+  document.getElementById("vTvlY1Pnl").textContent  = fmtTvl(state.tvl_y1);
+  document.getElementById("vTvlY2Pnl").textContent  = fmtTvl(state.tvl_y2);
+  document.getElementById("vTvlY3Pnl").textContent  = fmtTvl(state.tvl_y3);
+  document.getElementById("vCohortTake").textContent = (state.cohortTakeRate * 100).toFixed(1) + "%";
+
+  // P&L table
+  const cell = (n) => fmtUSDFull(n);
+  const negCell = (n) => "(" + fmtUSDFull(Math.abs(n)) + ")";
+  const rows = [
+    { type: "section", label: "Revenue" },
+    { label: "Gross fee revenue (TVL × 9% × 15%)", y1: p.y1.grossFees, y2: p.y2.grossFees, y3: p.y3.grossFees, fmt: cell, indent: true },
+    { label: "Less: node operator share (50%)", y1: -p.y1.toNodes, y2: -p.y2.toNodes, y3: -p.y3.toNodes, fmt: negCell, indent: true, abs: true },
+    { type: "subtotal", label: "Protocol revenue (net of node share)", y1: p.y1.toProtocol, y2: p.y2.toProtocol, y3: p.y3.toProtocol, fmt: cell },
+
+    { type: "section", label: "Operating expenses" },
+    { label: "Operations", y1: -p.y1.opsOpex, y2: -p.y2.opsOpex, y3: -p.y3.opsOpex, fmt: negCell, indent: true, abs: true },
+    { label: "Core dev & engineering", y1: -p.y1.devOpex, y2: -p.y2.devOpex, y3: -p.y3.devOpex, fmt: negCell, indent: true, abs: true },
+    { label: "Overhead", y1: -p.y1.ovhOpex, y2: -p.y2.ovhOpex, y3: -p.y3.ovhOpex, fmt: negCell, indent: true, abs: true },
+    { type: "subtotal", label: "Total opex", y1: -p.y1.totalOpex, y2: -p.y2.totalOpex, y3: -p.y3.totalOpex, fmt: negCell, abs: true },
+
+    { type: "netincome", label: "Net Income", y1: p.y1.netIncome, y2: p.y2.netIncome, y3: p.y3.netIncome, fmt: cell },
+
+    { type: "section", label: "Distribution of Net Income" },
+    { type: "lp", label: "→ LP cohort take (" + (state.cohortTakeRate * 100).toFixed(1) + "%)", y1: p.y1.lpTake, y2: p.y2.lpTake, y3: p.y3.lpTake, fmt: cell, indent: true },
+    { label: "→ Retained by protocol", y1: p.y1.retained, y2: p.y2.retained, y3: p.y3.retained, fmt: cell, indent: true },
+  ];
+
+  const tbody = document.getElementById("pnlTbody");
+  tbody.innerHTML = rows.map(r => {
+    if (r.type === "section") {
+      return `<tr class="pnl-section"><td colspan="5">${r.label}</td></tr>`;
+    }
+    const klass = r.type === "subtotal" ? "pnl-subtotal" :
+                  r.type === "netincome" ? "pnl-netincome" :
+                  r.type === "lp" ? "pnl-lp" : "";
+    const indentClass = r.indent ? "pnl-indent" : "";
+    const cls = (klass + " " + indentClass).trim();
+    const total = r.y1 + r.y2 + r.y3;
+    return `<tr${cls ? ` class="${cls}"` : ""}>
+      <td>${r.label}</td>
+      <td>${r.fmt(r.y1)}</td>
+      <td>${r.fmt(r.y2)}</td>
+      <td>${r.fmt(r.y3)}</td>
+      <td>${r.fmt(total)}</td>
+    </tr>`;
+  }).join("");
+
+  // Narrative
+  const lpPct = state.cohortTakeRate * 100;
+  const retainedPct = (1 - state.cohortTakeRate) * 100;
+  const niTotal = p.total.netIncome;
+  let warning = "";
+  if (niTotal < 0) {
+    warning = " <b>Note:</b> at this TVL ramp, cumulative net income is negative — the protocol absorbs the loss and LPs capture $0 from this bucket.";
+  }
+  document.getElementById("narrativePnl").innerHTML =
+    `Over 3 years, the protocol generates <b>${fmtUSDFull(niTotal)}</b> in cumulative net income. ` +
+    `Of that, <b>${lpPct.toFixed(1)}%</b> (<b>${fmtUSDFull(p.total.lpTake)}</b>) flows to the LP cohort, and <b>${retainedPct.toFixed(1)}%</b> (<b>${fmtUSDFull(p.total.retained)}</b>) is retained by the protocol/foundation.${warning}`;
+}
+
 // ============== RENDER ALL ==============
 function renderAll() {
-  // Keep slider DOM in sync with state across both tabs
+  // Keep slider DOM in sync with state across all tabs
   const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-  setVal("price", state.price);
-  setVal("raise", state.raise);
-  setVal("price3y", state.price);
-  setVal("raise3y", state.raise);
+  setVal("price", state.price);     setVal("price3y", state.price);     setVal("pricePnl", state.price);
+  setVal("raise", state.raise);     setVal("raise3y", state.raise);
   setVal("tvl", state.tvl);
-  setVal("tvlY1", state.tvl_y1);
-  setVal("tvlY2", state.tvl_y2);
-  setVal("tvlY3", state.tvl_y3);
+  setVal("tvlY1", state.tvl_y1);    setVal("tvlY1Pnl", state.tvl_y1);
+  setVal("tvlY2", state.tvl_y2);    setVal("tvlY2Pnl", state.tvl_y2);
+  setVal("tvlY3", state.tvl_y3);    setVal("tvlY3Pnl", state.tvl_y3);
+  setVal("cohortTake", state.cohortTakeRate);
 
   // Highlight the matching scenario button (or none, if user dragged sliders away)
   const snap = (n) => Math.round(n / 50_000_000) * 50_000_000;
@@ -1173,6 +1432,7 @@ function renderAll() {
 
   render();
   render3y();
+  renderPnl();
 }
 
 // ============== EVENTS ==============
@@ -1196,6 +1456,13 @@ bind("raise3y", "raise");                // synced — same state field
 bind("tvlY1", "tvl_y1");
 bind("tvlY2", "tvl_y2");
 bind("tvlY3", "tvl_y3");
+
+// Tab 3 (Protocol P&L)
+bind("pricePnl",  "price");              // synced
+bind("tvlY1Pnl",  "tvl_y1");             // synced
+bind("tvlY2Pnl",  "tvl_y2");             // synced
+bind("tvlY3Pnl",  "tvl_y3");             // synced
+bind("cohortTake", "cohortTakeRate");
 
 // Ticket buttons — sync across both tabs
 document.querySelectorAll(".ticket-btn").forEach(btn => {
