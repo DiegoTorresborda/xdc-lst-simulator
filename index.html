@@ -1240,7 +1240,7 @@ function render() {
   if (c.protoMargin <= 0) {
     warning = " <b>Note:</b> at this TVL the protocol P&L is negative, so the LP captures $0 from the fee-share bucket — most of the yield comes from base staking and OBC.";
   }
-  narr.innerHTML = `Your ticket of <b>${fmtUSDFull(state.ticket)}</b> at XDC <b>$${state.price.toFixed(4)}</b> with <b>${fmtXDC(state.tvl)}</b> of LST TVL produces a <b>${fmtPct(c.apy)}</b> annual APY. The largest contributor is <b>${dominant.name}</b> (${fmtUSDFull(dominant.value)}).${warning}`;
+  narr.innerHTML = `Your ticket of <b>${fmtUSDFull(state.ticket)}</b> at XDC <b>$${state.price.toFixed(4)}</b> with <b>${fmtXDC(state.tvl_y1)}</b> of LST TVL produces a <b>${fmtPct(c.apy)}</b> annual APY. The largest contributor is <b>${dominant.name}</b> (${fmtUSDFull(dominant.value)}).${warning}`;
 }
 
 // ============== RENDER 3-YEAR ==============
